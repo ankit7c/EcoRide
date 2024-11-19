@@ -309,6 +309,168 @@ app.get('/:username/seller/add-car', (req, res) => {
     res.send(html);
 });
   
+  app.post('/:username/seller/add-car', (req, res) => {
+    console.log("Seller has started adding car")
+    const { carModel, mileage, price, carCompany } = req.body; // Extract data from the form
+    const { username } = req.params; // Extract username from the route
+  
+    // Query to fetch the last carId
+    const getLastCarId = 'SELECT MAX(carId) AS lastCarId FROM Car';
+    // Query to fetch userId from User table based on username
+    const getUserId = 'SELECT userId FROM User WHERE name = ?';
+    // Query to insert the new car into the Car table
+    const insertCar = `
+      INSERT INTO Car (carId, userId, price, mileage, availability, carCompany, carModel)
+      VALUES (?, ?, ?, ?, true, ?, ?)
+    `;
+  
+    // Fetch the last carId
+    connection.query(getLastCarId, (err, result) => {
+      if (err) {
+        res.status(500).send({ message: 'Error fetching last carId', error: err });
+        return;
+      }
+  
+      const newCarId = (result[0].lastCarId || 0) + 1; // Increment last carId or default to 1 if table is empty
+  
+      // Fetch the userId from the User table
+      connection.query(getUserId, [username], (err, userResult) => {
+        if (err) {
+          res.status(500).send({ message: 'Error fetching userId', error: err });
+          return;
+        }
+  
+        if (userResult.length === 0) {
+          res.status(400).send({ message: 'User not found' });
+          return;
+        }
+  
+        const userId = userResult[0].userId;
+  
+        // Insert the new car into the Car table
+        connection.query(
+          insertCar,
+          [newCarId, userId, price, mileage, carCompany, carModel],
+          (err, insertResult) => {
+            if (err) {
+              res.status(500).send({ message: 'Error adding car to the database', error: err });
+              return;
+            }
+  
+            // Redirect back to the buyer's page after successful insertion
+            // res.send(insertResult)
+            res.redirect(`/${username}/profile`);
+          }
+        );
+      });
+    });
+  });
+  
+
+
+  app.get('/:username/profile', (req, res) => {
+    const { username } = req.params;
+  
+    // Query to fetch user details
+    const getUserDetails = 'SELECT userId, name, email FROM User WHERE name = ?';
+    // Query to fetch cars listed by the user
+    const getUserCars = 'SELECT * FROM Car WHERE userId = (SELECT userId FROM User WHERE name = ?)';
+  
+    // Fetch user details and their cars
+    connection.query(getUserDetails, [username], (err, userResult) => {
+      if (err || userResult.length === 0) {
+        res.status(500).send({ message: 'Error fetching user details or user not found', error: err });
+        return;
+      }
+  
+      const user = userResult[0];
+  
+      connection.query(getUserCars, [username], (err, carResults) => {
+        if (err) {
+          res.status(500).send({ message: 'Error fetching user cars', error: err });
+          return;
+        }
+  
+        // Render the profile page
+        const html = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${username}'s Profile</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+          </head>
+          <body>
+            <div class="container mt-5">
+              <h1 class="text-center">Welcome, ${user.name}</h1>
+              <p class="text-center">Email: ${user.email}</p>
+  
+              <h2 class="mt-4">Your Listed Cars</h2>
+              <div class="row">
+                ${
+                  carResults.length > 0
+                    ? carResults
+                        .map(
+                          (car) => `
+                            <div class="col-md-4 mb-3">
+                              <div class="card shadow-sm">
+                                <div class="card-body">
+                                  <h5 class="card-title">${car.carModel}</h5>
+                                  <p class="card-text">
+                                    <strong>Company:</strong> ${car.carCompany}<br>
+                                    <strong>Mileage:</strong> ${car.mileage} km<br>
+                                    <strong>Price:</strong> $${car.price}<br>
+                                  </p>
+                                  <div class="d-flex justify-content-between">
+                                    <a href="/${username}/car/${car.carId}/edit" class="btn btn-success btn-sm">Edit</a>
+
+                                    <form action="/${username}/seller/${car.carId}/delete" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          `
+                        )
+                        .join('')
+                    : `<p class="text-center">You have no cars listed. <a href="/${username}/seller/add-car">Add one now</a>.</p>`
+                }
+              </div>
+  
+              <div class="mt-4">
+                <a href="/${username}/seller/add-car" class="btn btn-primary" >Add New Car</a>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+  
+        res.send(html);
+      });
+    });
+  });
+
+
+  // app.post('/:username/seller/:carId/delete', (req, res) => {
+  //   const { username } = req.params;
+  //   const { carId } = req.body; // Assume the carId is sent in the body for deletion
+  
+  //   // Query to delete the car based on carId
+  //   const deleteCarQuery = 'DELETE FROM Car WHERE carId = ?';
+  
+  //   connection.query(deleteCarQuery, [carId], (err, result) => {
+  //     if (err) {
+  //       res.status(500).send({ message: 'Error deleting car', error: err });
+  //       return;
+  //     }
+  
+  //     // Redirect the user back to their profile or seller page after deletion
+  //     res.redirect(`/${username}/profile`);
+  //   });
+  // });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
