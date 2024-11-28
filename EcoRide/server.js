@@ -110,7 +110,7 @@ app.post('/login', function (req, res) {
 app.get('/:username/manage', (req, res) => {
     const username = req.params.username;
 
-    // Fetch user_id based on username
+    // Fetch user_id based on username.
     const userSql = `SELECT userId FROM User WHERE name = ?`;
     connection.query(userSql, [username], (err, userResult) => {
         if (err || userResult.length === 0) {
