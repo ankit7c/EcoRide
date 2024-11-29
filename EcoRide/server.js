@@ -134,17 +134,27 @@ app.get('/:username/manage', (req, res) => {
 
 
 app.get('/:username/buyer', (req, res) => {
-  const username = req.params.username;
-  const sql = 'SELECT * FROM Car WHERE availability=true';
+  const searchTerm = req.query.search || ''; 
+  const sql = `
+      SELECT * FROM Car 
+      WHERE availability=true
+      AND (carModel LIKE ? OR carCompany LIKE ?)
+  `;
 
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [`%${searchTerm}%`, `%${searchTerm}%`], (err, results) => {
     if (err) {
       res.status(500).send({ message: 'Error fetching car data', error: err });
       return;
     }
-    res.render('buyer', { cars: results });
+
+    res.render('buyer', {
+      username: req.params.username, 
+      searchTerm: searchTerm,
+      cars: results
+    });
   });
 });
+
 
   
 
