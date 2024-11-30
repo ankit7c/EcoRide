@@ -9,7 +9,7 @@
 <body>
   <div class="container mt-5">
     <h1 class="mb-4 text-center">Available Cars</h1>
-    <form method="get" action="/<%= username %>/buyer" class="mb-3">
+    <form method="get" action="/<%= username %>/cars/book" class="mb-3">
       <div class="d-flex justify-content-between">
         <input type="text" class="form-control w-50" name="search" placeholder="Search by model or company" value="<%= searchTerm %>">
         <button type="submit" class="btn btn-primary ms-2">Search</button>
@@ -28,7 +28,8 @@
                   <strong>Mileage:</strong> <%= car.mileage %> <br>
                   <strong>Price:</strong> $<%= car.price %>
                 </p>
-                <button class="btn btn-success">Book</button>
+                <a href="/<%= username %>/car/<%= car.carId %>/book" class="btn btn-success">Book</a>
+                <!-- <button class="btn btn-success">Book</button> -->
               </div>
             </div>
           </div>
