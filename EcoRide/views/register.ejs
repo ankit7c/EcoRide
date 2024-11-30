@@ -1,81 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register</title>
-  <link rel="stylesheet" href="styles/login_styles.css" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-    rel="stylesheet"
-  />
-</head>
-<body>
-  <!-- Include Header -->
-
-  <!-- Registration Form -->
-  <div class="login-container">
-    <div class="login-card">
-      <h1>Register for EcoRide</h1>
-      <form action="/register" method="POST">
-        <div class="form-group">
-          <label for="name">Username</label>
-          <div class="input-wrapper">
-            <span class="icon">👤</span>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Enter your username"
-              required
-            />
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link rel="stylesheet" href="styles/login_styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header><%- include('header.ejs') %></header>
+      <div class="login-container">
+        <div class="login-card">
+          <h1>Register for EcoRide</h1>
+          <form action="/register" method="POST">
+            <div class="form-group">
+              <label for="name">Username</label>
+              <div class="input-wrapper">
+                <span class="icon">👤</span>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <div class="input-wrapper">
+                <span class="icon">📧</span>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="contact">Contact</label>
+              <div class="input-wrapper">
+                <span class="icon">📞</span>
+                <input
+                  type="text"
+                  id="contact"
+                  name="contact"
+                  placeholder="Enter your contact"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <div class="input-wrapper">
+                <span class="icon">🔒</span>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit" class="login-button">Register</button>
+          </form>
+          <p class="register-text">
+            Already have an account? <a href="/login">Login here</a>
+          </p>
         </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <div class="input-wrapper">
-            <span class="icon">📧</span>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="contact">Contact</label>
-          <div class="input-wrapper">
-            <span class="icon">📞</span>
-            <input
-              type="text"
-              id="contact"
-              name="contact"
-              placeholder="Enter your contact"
-              required
-            />
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="input-wrapper">
-            <span class="icon">🔒</span>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-        </div>
-        <button type="submit" class="login-button">Register</button>
-      </form>
-      <p class="register-text">
-        Already have an account? <a href="/login">Login here</a>
-      </p>
+      </div>
     </div>
-  </div>  
-</body>
+  </body>
 </html>
