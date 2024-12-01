@@ -147,6 +147,7 @@ app.get('/:username/checkRole', (req, res) => {
       console.log(roleResults)
       console.log(roleResults.length)
       if (roleResults.length > 0) {
+        // res.render('')
         res.redirect(`/${username}/${roleResults[0].role}/profile?param=${roleResults.length}`);
       }else{
         res.redirect(`/${username}/manage`)
@@ -162,6 +163,7 @@ app.get("/:username/manage", (req,res)=>{
   res.render('manage',{username, isLogin});
 })
 
+// can be updated in future with the param value 
 app.get('/:username/addRole', (req, res) => {
   console.log("Reached ADD role")
   const { username } = req.params;
@@ -256,6 +258,77 @@ app.get('/:username/car/:carId/book', (req, res) => {
   });
 });
 
+app.post('/:username/car/:carId/book/confirm', (req, res) => {
+  const { hours } = req.body;
+  const { username, carId } = req.params;
+  const startTime = new Date();
+  const endTime = new Date(startTime.getTime() + hours * 60 * 60 * 1000);
+  console.log("Confirm TT",endTime)
+
+  const getUserIdQuery = 'SELECT userId FROM User WHERE name = ?';
+
+  const getMileageQuery = 'SELECT mileage FROM Car WHERE carId = ?';
+
+  const getMaxBookingIdQuery = 'SELECT MAX(bookingId) AS maxId FROM Booking';
+
+  connection.query(getUserIdQuery, [username], (err, userResult) => {
+    if (err || userResult.length === 0) {
+      return res.status(500).send({ message: 'Error fetching user ID or user not found', error: err });
+    }
+    const userId = userResult[0].userId;
+
+    connection.query(getMileageQuery, [carId], (err, carResult) => {
+      if (err || carResult.length === 0) {
+        return res.status(500).send({ message: 'Error fetching car mileage or car not found', error: err });
+      }
+
+      const startMileage = carResult[0].mileage;
+
+      connection.query(getMaxBookingIdQuery, (err, result) => {
+        if (err) {
+          return res.status(500).send({ message: 'Error fetching booking ID', error: err });
+        }
+
+      const nextBookingId = (result[0].maxId || 0) + 1;
+
+      const insertQuery = `
+        INSERT INTO Booking (bookingId, carId, userId, startDate, endDate, startMileage, endMileage)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      connection.query(
+        insertQuery,
+        [nextBookingId, carId, userId, startTime, endTime, startMileage, startMileage, hours],
+        (err, result) => {
+          if (err) {
+            return res.status(500).send({ message: 'Error inserting booking', error: err });
+          }
+          const updateAvailability = `UPDATE Car SET availability=false where carId = ?`
+          connection.query(updateAvailability, [carId], (updateErr, updateResult) => {
+            if (updateErr) {
+              console.error("Error updating car availability:", updateErr);
+              return res.status(500).send({ message: "Error updating car availability", error: updateErr });
+            }
+          });
+
+
+          const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
+
+          connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
+            if (err) {
+              console.error('Error checking user role:', err);
+              return res.status(500).send('Error checking user role');
+            }
+            if (roleResults.length > 0) {
+              res.redirect(`/${username}/${roleResults[0].role}/profile?param=${roleResults.length}`);
+            }
+          });
+        });
+      });
+    });
+  });
+});
+
   
 
 app.get('/:username/seller/add-car', (req, res) => {
@@ -310,7 +383,18 @@ app.post('/:username/seller/add-car', (req, res) => {
             return;
           }
 
-          res.redirect(`/${username}/profile`);
+          const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
+
+          connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
+            if (err) {
+              console.error('Error checking user role:', err);
+              return res.status(500).send('Error checking user role');
+            }
+            
+              if (roleResults.length > 0) {
+              res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
+              }
+          });
         }
       );
     });
@@ -330,22 +414,55 @@ app.get('/:username/:role/profile', (req, res) => {
       res.status(500).send({ message: 'Error fetching user details or user not found', error: err });
       return;
     }
-
     const user = userResult[0];
+    console.log(user)
 
     connection.query(getUserCars, [username], (err, carResults) => {
       if (err) {
         res.status(500).send({ message: 'Error fetching user cars', error: err });
         return;
       }
-      console.log(param)
-      console.log(typeof(param))
-      console.log(role)
-      isLogin = true;
-      res.render('profile1', { username, user, cars: carResults, role, param , isLogin});
+      console.log("HIIII", username)
+      console.log("HIIII", user)
+      console.log("HIIII", carResults)
+      const getBookingsQuery = `
+        SELECT b.startDate, b.endDate,b.endMileage, c.carModel, c.carCompany, c.price
+        FROM Booking b
+        INNER JOIN Car c ON b.carId = c.carId
+        INNER JOIN User u ON b.userId = u.userId
+        WHERE u.userId = ?
+      `;
+
+      connection.query(getBookingsQuery, [user.userId], (bookingErr, bookingResults) => {
+        if (bookingErr) {
+          res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
+          return;
+        }
+        res.render('profile', { username, user, cars: carResults, role, param, bookingResults});
+      });
     });
   });
 });
+
+      // const getBookingsQuery = `
+      //   SELECT b.startDate, b.endDate,b.endMileage, c.carModel, c.carCompany, c.price
+      //   FROM Booking b
+      //   INNER JOIN Car c ON b.carId = c.carId
+      //   INNER JOIN User u ON b.userId = u.userId
+      //   WHERE u.userId = ?
+      // `;
+
+      // connection.query(getBookingsQuery, [user.userId], (bookingErr, bookingResults) => {
+      //   if (bookingErr) {
+      //     res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
+      //     return;
+      //   }
+      //   console.log("Booking data",bookingResults)
+
+        
+      // });
+      
+
   
 
 app.post('/:username/seller/:carId/delete', (req, res) => {
@@ -359,8 +476,33 @@ app.post('/:username/seller/:carId/delete', (req, res) => {
       res.status(500).send({ message: 'Error deleting car', error: err });
       return;
     }
+    const getUserIdQuery = 'SELECT userId FROM User WHERE name = ?';
 
-    res.redirect(`/${username}/profile`);
+    connection.query(getUserIdQuery, [username], (err, results) => {
+      if (err) {
+        console.error('Error fetching user ID:', err);
+        return res.status(500).send('Error fetching user ID');
+      }
+
+      if (results.length === 0) {
+        return res.status(404).send('User not found');
+      }
+
+      const userId = results[0].userId;
+
+      const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
+
+      connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
+        if (err) {
+          console.error('Error checking user role:', err);
+          return res.status(500).send('Error checking user role');
+        }
+      
+        if (roleResults.length > 0) {
+        res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
+        }
+      });
+    });
   });
 });
   
@@ -416,7 +558,34 @@ app.post('/:username/car/:carId/edit', (req, res) => {
         res.status(404).send({ message: 'Car not found' });
         return;
       }
-      res.redirect(`/${username}/profile`);
+
+      const getUserIdQuery = 'SELECT userId FROM User WHERE name = ?';
+
+      connection.query(getUserIdQuery, [username], (err, results) => {
+        if (err) {
+          console.error('Error fetching user ID:', err);
+          return res.status(500).send('Error fetching user ID');
+        }
+
+        if (results.length === 0) {
+          return res.status(404).send('User not found');
+        }
+
+        const userId = results[0].userId;
+
+        const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
+
+        connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
+          if (err) {
+            console.error('Error checking user role:', err);
+            return res.status(500).send('Error checking user role');
+          }
+        
+          if (roleResults.length > 0) {
+          res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
+          }
+        });
+      });
     }
   );
 });

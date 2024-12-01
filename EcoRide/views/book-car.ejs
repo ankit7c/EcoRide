@@ -12,20 +12,13 @@
       <p><strong>Company:</strong> <%= car.carCompany %></p>
       <p><strong>Mileage:</strong> <%= car.mileage %> km</p>
       <p><strong>Price per Hour:</strong> $<%= car.price %></p>
-  
-      
 
-      <form id="booking-form" action="/<%= username %>/car/<%= car.carId %>/confirm-booking" method="POST">
-        
+      <form id="booking-form" action="/<%= username %>/car/<%= car.carId %>/book/confirm" method="POST">
         <div class="mb-3">
           <label for="hours" class="form-label">Number of Hours</label>
           <input type="number" id="hours" name="hours" class="form-control" min="1" required>
         </div>
-      
-        
-      
         <p><strong>Total Price:</strong> $<span id="totalPrice">0</span></p>
-      
         <button type="submit" class="btn btn-primary">Confirm Booking</button>
         <a href="/<%= username %>/cars/book" class="btn btn-secondary">Cancel</a>
       </form>
@@ -33,19 +26,13 @@
     </div>
   
     <script>
-      // Pass car price from EJS to JavaScript safely
       const pricePerHour = <%= car.price %>;
-
-  
-      // Get DOM elements
       const hoursInput = document.getElementById('hours');
       const totalPriceElement = document.getElementById('totalPrice');
-  
-      // Event listener to calculate and update total price dynamically
       hoursInput.addEventListener('input', () => {
-        const hours = parseInt(hoursInput.value) || 0; // Ensure hours is a valid number
-        const totalPrice = hours * pricePerHour;      // Calculate total price
-        totalPriceElement.innerText = totalPrice.toFixed(2); // Display price with 2 decimals
+        const hours = parseInt(hoursInput.value) || 0; 
+        const totalPrice = hours * pricePerHour;     
+        totalPriceElement.innerText = totalPrice.toFixed(2); 
       });
     </script>
   </body>
