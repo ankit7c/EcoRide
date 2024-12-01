@@ -35,21 +35,25 @@ connection.connect((err) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-
+var isLogin = false;
 app.get('/', (req, res) => {
-  res.render('start'); 
+  isLogin = false;
+  res.render('start' , {isLogin}); 
 });
 
 app.get('/index', (req, res) => {
-  res.render('index'); 
+  isLogin = false;
+  res.render('index', {isLogin}); 
 });
 
 app.get('/login', (req, res) => {
-  res.render('login')
+  isLogin = false;
+  res.render('login', {isLogin}); 
 });
 
 app.get('/register', (req, res) => {
-  res.render('register')
+  isLogin = false;
+  res.render('register', {isLogin}); 
 });
 
 app.post('/register', function(req, res) {
@@ -153,8 +157,9 @@ app.get('/:username/checkRole', (req, res) => {
 
 
 app.get("/:username/manage", (req,res)=>{
-  const username = req.params
-  res.render('manage',username)
+  const username = req.params.username
+  isLogin = true;
+  res.render('manage',{username, isLogin});
 })
 
 app.get('/:username/addRole', (req, res) => {
@@ -230,6 +235,7 @@ app.get('/:username/cars/book', (req, res) => {
     res.render('buyer', {
       username: req.params.username, 
       searchTerm: searchTerm,
+      isLogin: isLogin,
       cars: results
     });
   });
@@ -254,7 +260,8 @@ app.get('/:username/car/:carId/book', (req, res) => {
 
 app.get('/:username/seller/add-car', (req, res) => {
   const { username } = req.params;
-  res.render('add-car', { username });
+  isLogin = true;
+  res.render('add-car', { username , isLogin });
 });
   
   
@@ -334,7 +341,8 @@ app.get('/:username/:role/profile', (req, res) => {
       console.log(param)
       console.log(typeof(param))
       console.log(role)
-      res.render('profile1', { username, user, cars: carResults, role, param});
+      isLogin = true;
+      res.render('profile1', { username, user, cars: carResults, role, param , isLogin});
     });
   });
 });

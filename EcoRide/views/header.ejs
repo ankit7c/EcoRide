@@ -17,4 +17,8 @@
   <a href="/" class="active">Home</a>
   <a href="#">About Us</a>
   <a href="#">Contact Us</a>
+  <% if (isLogin) { %>
+    <a href="#">Profile</a>
+    <a href="/">Logout</a>
+  <% } %>
 </nav>
