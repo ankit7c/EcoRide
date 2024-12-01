@@ -5,61 +5,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= username %>'s Profile</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/styles.css">
 </head>
 <body>
-  <div class="container mt-5">
-    <h1 class="text-center">Welcome, <%= user.name %></h1>
-    <p class="text-center">Email: <%= user.email %></p>
+  <div class="container">
+    <header>
+      <%- include('header.ejs') %>
+    </header>
 
-    <!-- Conditional rendering based on role -->
-    <% if (role === 'buyer' || param == 2) { %>
-      <div class="mt-4 text-center">
-        <a href="/<%= username %>/cars/book" class="btn btn-warning">Book a Car</a>
-      </div>
-    <% } %>
-    <% if (role === 'seller' || param == 2) { %>
-      <% if (cars.length > 0) { %>
-        <h2 class="mt-4">Your Listed Cars</h2>
+    <div class="mt-5">
+      <h1 class="text-center">Welcome, <%= user.name %></h1>
+      <p class="text-center">Email: <%= user.email %></p>
+
+      <!-- Conditional rendering based on role -->
+      <% if (role === 'buyer' || param == 2) { %>
+        <div class="mt-4 text-center">
+          <a href="/<%= username %>/cars/book" class="btn btn-warning">Book a Car</a>
+        </div>
       <% } %>
-      <div class="row">
+      <% if (role === 'seller' || param == 2) { %>
         <% if (cars.length > 0) { %>
-          <% cars.forEach(car => { %>
-            <div class="col-md-4 mb-3">
-              <div class="card shadow-sm">
-                <div class="card-body">
-                  <h5 class="card-title"><%= car.carModel %></h5>
-                  <p class="card-text">
-                    <strong>Company:</strong> <%= car.carCompany %><br>
-                    <strong>Mileage:</strong> <%= car.mileage %> km<br>
-                    <strong>Price:</strong> $<%= car.price %><br>
-                  </p>
-                  <div class="d-flex justify-content-between">
-                    <a href="/<%= username %>/car/<%= car.carId %>/edit" class="btn btn-success btn-sm">Edit</a>
-                    <form action="/<%= username %>/seller/<%= car.carId %>/delete" method="POST" style="display: inline;">
-                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
+          <h2 class="mt-4">Your Listed Cars</h2>
+        <% } %>
+        <div class="row">
+          <% if (cars.length > 0) { %>
+            <% cars.forEach(car => { %>
+              <div class="col-md-4 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title"><%= car.carModel %></h5>
+                    <p class="card-text">
+                      <strong>Company:</strong> <%= car.carCompany %><br>
+                      <strong>Mileage:</strong> <%= car.mileage %> km<br>
+                      <strong>Price:</strong> $<%= car.price %><br>
+                    </p>
+                    <div class="d-flex justify-content-between">
+                      <a href="/<%= username %>/car/<%= car.carId %>/edit" class="btn btn-success btn-sm">Edit</a>
+                      <form action="/<%= username %>/seller/<%= car.carId %>/delete" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          <% }); %>
-        <% } else { %>
-          <p class="text-center">You have no cars listed.</p>
-        <% } %>
-      </div>
+            <% }); %>
+          <% } else { %>
+            <p class="text-center">You have no cars listed.</p>
+          <% } %>
+        </div>
 
-      <div class="mt-4">
-        <a href="/<%= username %>/seller/add-car" class="btn btn-primary">Add New Car</a>
-      </div>
-    <% } if (role === 'buyer' || param == 2) { %>
-      <h2 class="mt-4">Your Previous Trips</h2>
-      <ul class="list-group">
-        <!-- Hardcoded trips for demonstration -->
-        <li class="list-group-item">Trip to New York - 500 miles</li>
-        <li class="list-group-item">Trip to Chicago - 300 miles</li>
-        <li class="list-group-item">Trip to Boston - 400 miles</li>
-      </ul>
-    <% } %>
+        <div class="mt-4">
+          <a href="/<%= username %>/seller/add-car" class="btn btn-primary">Add New Car</a>
+        </div>
+      <% } if (role === 'buyer' || param == 2) { %>
+        <h2 class="mt-4">Your Previous Trips</h2>
+        <ul class="list-group">
+          <!-- Hardcoded trips for demonstration -->
+          <li class="list-group-item">Trip to New York - 500 miles</li>
+          <li class="list-group-item">Trip to Chicago - 300 miles</li>
+          <li class="list-group-item">Trip to Boston - 400 miles</li>
+        </ul>
+      <% } %>
+    </div>
   </div>
 </body>
 </html>
