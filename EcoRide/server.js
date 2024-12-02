@@ -438,7 +438,7 @@ app.get('/:username/:role/profile', (req, res) => {
           res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
           return;
         }
-        res.render('profile', { username, user, cars: carResults, role, param, bookingResults});
+        res.render('profile', { username, user, cars: carResults, role, param, bookingResults, isLogin});
       });
     });
   });
