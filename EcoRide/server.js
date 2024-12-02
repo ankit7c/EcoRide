@@ -233,7 +233,7 @@ app.get('/:username/cars/book', (req, res) => {
       res.status(500).send({ message: 'Error fetching car data', error: err });
       return;
     }
-
+    isLogin = true;
     res.render('buyer', {
       username: req.params.username, 
       searchTerm: searchTerm,
@@ -438,6 +438,7 @@ app.get('/:username/:role/profile', (req, res) => {
           res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
           return;
         }
+        isLogin = true;
         res.render('profile', { username, user, cars: carResults, role, param, bookingResults, isLogin});
       });
     });
@@ -523,6 +524,7 @@ app.get('/:username/car/:carId/edit', (req, res) => {
       return;
     }
     const car = results[0]; 
+    isLogin = true;
     res.render('edit-car', { 
       username, 
       carId, 
@@ -530,7 +532,8 @@ app.get('/:username/car/:carId/edit', (req, res) => {
       carCompany: car.carCompany, 
       mileage: car.mileage, 
       price: car.price, 
-      availability: car.availability 
+      availability: car.availability,
+      isLogin:isLogin 
     });
   });
 });
