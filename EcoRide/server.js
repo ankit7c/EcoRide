@@ -126,7 +126,12 @@ app.get('/:username/:role/profile', (req, res) => {
         const bookingResults = resultBooking
         const rewardQuery = 'SELECT points FROM EcoPoints where userId =?'
         connection.query(rewardQuery,[user.userId], (err,resReward)=>{
-          const pts = resReward[0].points
+          var pts = 0
+          if (resReward && resReward.length > 0) {  
+            pts = resReward[0].points;
+          } else {
+            pts = 0;  
+          }
           checkUserRole(user.userId, (err,resultRole)=>{
             param = resultRole.length
             const role = param>1? "seller":"buyer"
@@ -530,7 +535,6 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
   const { username, carId, bookingId } = req.params;
   const endMileage = parseFloat(parseFloat(req.body.endMileage).toFixed(2));
   const rating = parseFloat(req.body.rating);
-  console.log(rating)
   try {
     const getStartMileageQuery = 'SELECT mileage, price from Car WHERE carId = ?';
     connection.query(getStartMileageQuery,carId,(err,resultMil)=>{
@@ -552,7 +556,6 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
             const carUserQuery = 'SELECT userId FROM Car WHERE carId = ?'
             connection.query(carUserQuery,[carId],(err,carUser)=>{
               const carUserId = carUser[0].userId
-              console.log("hi from the car owner",carUser)
               updateEcoPointsForUser(carUserId, (err, updateSellerEco)=>{})
             })
           }
@@ -598,6 +601,46 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
     res.status(500).send({ message: 'Error processing ride completion', error: err });
   }
 });
+
+
+
+
+
+app.get('/:username/eco-points/:pts', (req, res) => {
+  const {username} = req.params;
+  const pts = parseInt(req.params.pts, 0);
+  getUserIdByUsername(username, (err,resUser)=>{
+    checkUserRole(resUser, (err,resultRole)=>{
+      const param = resultRole.length
+      const role = param>1? "seller":"buyer"
+      res.render('eco-points', { username, param, role, pts });
+    })
+  })
+  
+});
+
+app.get('/:username/:role/claim-service',(req,res)=>{
+  const {username} = req.params
+  getUserIdByUsername(username, (err,resultUserId)=>{
+    const userId = resultUserId
+    const getUserEcoPtsQuery = 'SELECT points FROM EcoPoints WHERE userId = ?'
+    connection.query(getUserEcoPtsQuery,[userId],(err,resPts)=>{
+      const getOldPts = resPts[0].points
+      const newEcoPts = getOldPts-100
+      const updateEcoPts = 'UPDATE EcoPoints SET points=? WHERE userId=?'
+      connection.query(updateEcoPts, [newEcoPts,userId],(err,resUpdate)=>{
+        checkUserRole(userId, (err,resultRole)=>{
+          const param1 = resultRole.length
+          const role = param1>1? "seller":"buyer"
+          res.redirect(`/${username}/${role}/profile?param=${param1}`)
+        })
+      })
+    })
+  })
+})
+
+
+
   
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
