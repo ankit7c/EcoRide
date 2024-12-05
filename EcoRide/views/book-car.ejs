@@ -12,7 +12,7 @@
       <p><strong>Company:</strong> <%= car.carCompany %></p>
       <p><strong>Mileage:</strong> <%= car.mileage %> km</p>
       <p><strong>Price per Hour:</strong> $<%= car.price %></p>
-
+      
       <form id="booking-form" action="/<%= username %>/car/<%= car.carId %>/book/confirm" method="POST">
         <div class="mb-3">
           <label for="hours" class="form-label">Number of Hours</label>
