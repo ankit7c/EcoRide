@@ -53,51 +53,11 @@ function getBookingsByUserId(userId, callback) {
       if (results.length === 0) {
         return callback(new Error('No bookings found for the user'), null);
       }
-  
-    //   console.log("Bookings retrieved:", results);
+
       return callback(null, results);
     });
   }
   
-
-
-
-
-// function getBookingsByUserId(userId) {
-//     const getBookingsQuery = `
-//       SELECT b.startDate, b.endDate, b.endMileage, c.carModel, c.carCompany, c.price, c.carId, b.tripStatus
-//       FROM Booking b
-//       INNER JOIN Car c ON b.carId = c.carId
-//       INNER JOIN User u ON b.userId = u.userId
-//       WHERE u.userId = ?
-//     `;
-  
-//     try {
-//       connection.query(getBookingsQuery, [userId],(err, results)=>{
-//         return results
-//       });
-//     } catch (err) {
-//       console.error('Error fetching bookings:', err);
-//       throw new Error('Error fetching bookings');
-//     }
-//   }
-
-// function getUserDetailsByName(name) {
-//     const getUserDetailsQuery = 'SELECT userId, name, email FROM User WHERE name = ?';
-
-//     try {
-//         connection.query(getUserDetailsQuery, [name], (err, results)=>{
-//             if (results.length === 0) {
-//                 throw new Error('User not found');
-//             }
-                
-//             return results[0];
-//         });
-//     } catch (err) {
-//         console.error('Error fetching user details:', err);
-//         throw new Error('Error fetching user details');
-//     }
-// }
 
 function getUserDetailsByName(name, callback) {
     const getUserDetailsQuery = 'SELECT userId, name, email FROM User WHERE name = ?';
@@ -111,8 +71,6 @@ function getUserDetailsByName(name, callback) {
         if (results.length === 0) {
         return callback(new Error('User not found'), null);
         }
-
-        // console.log("User details:", results[0]);
         return callback(null, results[0]);
     });
 }
@@ -137,20 +95,15 @@ function getUserCarsByUserName(userId, callback) {
 
 
 function updateEcoPointsForUser(userId, callback) {
-  console.log("Inside update eco points")
-  console.log(userId)
-  // if (mileageDifference > 5) 
-    // {
+
       const getEcoPointsQuery = 'SELECT points FROM EcoPoints WHERE userId = ?';
       connection.query(getEcoPointsQuery, [userId], (err, results) => {
           if (err) {
               console.error('Error fetching eco points:', err);
               return callback(err, null);
           }
-          console.log("HIII", results)
           if (results.length > 0) 
           {
-            console.log("inside first if")
             const currentPoints = results[0].points;
             const updatedPoints = currentPoints + 50;
             const updateEcoPointsQuery = 'UPDATE EcoPoints SET points = ? WHERE userId = ?';
@@ -215,9 +168,30 @@ function addToCarRating(carId, userId, bookingId, ratingValue, callback) {
   });
 }
 
+function deleteRatingEntry(carId, callback) {
+  const deleteRatingQuery = 'DELETE FROM CarRating WHERE carId = ?';
+  
+  connection.query(deleteRatingQuery, [carId], (err, result) => {
+    if (err) {
+      console.error('Error deleting rating entry:', err);
+      return callback(err, null);  // Pass the error to the callback
+    }
+    callback(null, result);  // Pass the result to the callback
+  });
+}
 
 
+function deleteCarEntry(carId, callback) {
+  const deleteCarQuery = 'DELETE FROM Car WHERE carId = ?';
 
+  connection.query(deleteCarQuery, [carId], (err, result) => {
+    if (err) {
+      console.error('Error deleting car entry:', err);
+      return callback(err, null); // Pass the error to the callback
+    }
+    callback(null, result); // Pass the result to the callback
+  });
+}
 
 
   
@@ -228,5 +202,7 @@ module.exports = {
     getUserDetailsByName,
     getUserCarsByUserName,
     updateEcoPointsForUser,
-    addToCarRating
+    addToCarRating,
+    deleteRatingEntry,
+    deleteCarEntry
 };

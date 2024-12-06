@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 const connection = require('./db');
-const { checkUserRole, getUserIdByUsername, getBookingsByUserId, getUserDetailsByName, getUserCarsByUserName, updateEcoPointsForUser, addToCarRating} = require('./utils/help');
+const { checkUserRole, getUserIdByUsername, getBookingsByUserId, getUserDetailsByName, getUserCarsByUserName, updateEcoPointsForUser, addToCarRating, deleteRatingEntry, deleteCarEntry} = require('./utils/help');
 
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -427,43 +427,19 @@ app.get('/:username/:role/profile', (req, res) => {
 
 app.post('/:username/seller/:carId/delete', (req, res) => {
   const { username, carId } = req.params;
-  // Query to delete the car based on carId
-  const deleteCarQuery = 'DELETE FROM Car WHERE carId = ?';
-
-  connection.query(deleteCarQuery, [carId], (err, result) => {
-    if (err) {
-      res.status(500).send({ message: 'Error deleting car', error: err });
-      return;
-    }
-    const getUserIdQuery = 'SELECT userId FROM User WHERE name = ?';
-
-    connection.query(getUserIdQuery, [username], (err, results) => {
-      if (err) {
-        console.error('Error fetching user ID:', err);
-        return res.status(500).send('Error fetching user ID');
-      }
-
-      if (results.length === 0) {
-        return res.status(404).send('User not found');
-      }
-
-      const userId = results[0].userId;
-
-      const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
-
-      connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
-        if (err) {
-          console.error('Error checking user role:', err);
-          return res.status(500).send('Error checking user role');
-        }
-      
-        if (roleResults.length > 0) {
-        res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
-        }
-      });
-    });
-  });
-});
+  deleteRatingEntry(carId, (err,resultD)=>{
+    deleteCarEntry(carId,(err,resultC)=>{
+      getUserIdByUsername(username,(err,resultUser)=>{
+        const userId = resultUser
+        checkUserRole(userId, (err,resultRole)=>{
+          const param1 = resultRole.length
+          const role = param1>1? "seller":"buyer"
+          res.redirect(`/${username}/${role}/profile?param=${param1}`);
+        })
+      })
+    })
+  })
+})
   
 app.get('/:username/car/:carId/edit', (req, res) => {
   const { username, carId } = req.params;
@@ -703,10 +679,13 @@ app.get('/:username/:role/claim-service',(req,res)=>{
 })
 
 app.get('/about-us',(req,res)=>{
-  const query = 'SELECT c.carCompany, COUNT(b.bookingId) AS bookingCount FROM Booking b JOIN Car c ON b.carId = c.carId GROUP BY c.carCompany ORDER BY bookingCount desc LIMIT 5;'
-  connection.query(query,(err,resInsights)=>{
-    isLogin = false;
-    res.render('about-us',{resInsights, isLogin})
+  const query1 = 'SELECT c.carCompany, COUNT(b.bookingId) AS bookingCount FROM Booking b JOIN Car c ON b.carId = c.carId GROUP BY c.carCompany ORDER BY bookingCount desc LIMIT 5;'
+  const query2 = 'select c.carId,c.carCompany,c.carModel,COUNT(b.bookingId) as noOfBooking, AVG(cr.ratingValue) as avgRating,c.price,c.mileage from Car c inner join CarRating cr on cr.carId=c.carId inner join Booking b on b.bookingId=cr.bookingId where c.price<(Select avg(price) from Car) and c.mileage>(select avg(mileage) from Car) Group by c.carId having noOfBooking>=3 and avgRating>=4 Order by c.price asc,c.mileage desc,avgRating desc,noOfBooking desc LIMIT 5;'
+  connection.query(query1,(err,resInsights1)=>{
+    connection.query(query2,(err,resInsights2)=>{
+      isLogin = false;
+      res.render('about-us',{resInsights1, resInsights2,isLogin})
+    })
   })
 })
 
