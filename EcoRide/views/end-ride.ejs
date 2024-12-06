@@ -15,7 +15,8 @@
 
     const bookingStartTime = new Date('<%= booking.startDate %>');  
     const bookingEndTime = new Date('<%= booking.endDate %>');      
-
+    const timeRender = bookingEndTime.toLocaleString()
+    document.getElementById("scheduledEndTime").innerText = timeRender
     const tripEndTime = now > bookingEndTime ? now : bookingEndTime;  // Use the later of now or scheduled end
     const durationMs = tripEndTime - bookingStartTime;
     const tripHours = Math.ceil(durationMs / (1000 * 60 * 60));        // Convert ms to hours, round up
@@ -52,7 +53,7 @@
         <p><strong>Car Model:</strong> <%= carModel %></p>
         <p><strong>Car Company:</strong> <%= carCompany %></p>
         <p><strong>Starting Mileage:</strong> <%= booking.startMileage %> miles</p>
-        <p><strong>Scheduled End Time:</strong> <%= booking.endDate %></p>
+        <p><strong>Scheduled End Time:</strong><span id = "scheduledEndTime"></span> </p>
         <p><strong>Actual End Time: </strong><span id="endTime">Loading...</span></p>
       </div>
     </div>

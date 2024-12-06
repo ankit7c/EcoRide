@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 const connection = require('./db');
-const { checkUserRole, getUserIdByUsername, getBookingsByUserId, getUserDetailsByName, getUserCarsByUserName, updateEcoPointsForUser, addToCarRating} = require('./utils/help');
+const { checkUserRole, getUserIdByUsername, getBookingsByUserId, getUserDetailsByName, getUserCarsByUserName, updateEcoPointsForUser, addToCarRating, deleteRatingEntry, deleteCarEntry} = require('./utils/help');
 
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -427,43 +427,19 @@ app.get('/:username/:role/profile', (req, res) => {
 
 app.post('/:username/seller/:carId/delete', (req, res) => {
   const { username, carId } = req.params;
-  // Query to delete the car based on carId
-  const deleteCarQuery = 'DELETE FROM Car WHERE carId = ?';
-
-  connection.query(deleteCarQuery, [carId], (err, result) => {
-    if (err) {
-      res.status(500).send({ message: 'Error deleting car', error: err });
-      return;
-    }
-    const getUserIdQuery = 'SELECT userId FROM User WHERE name = ?';
-
-    connection.query(getUserIdQuery, [username], (err, results) => {
-      if (err) {
-        console.error('Error fetching user ID:', err);
-        return res.status(500).send('Error fetching user ID');
-      }
-
-      if (results.length === 0) {
-        return res.status(404).send('User not found');
-      }
-
-      const userId = results[0].userId;
-
-      const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
-
-      connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
-        if (err) {
-          console.error('Error checking user role:', err);
-          return res.status(500).send('Error checking user role');
-        }
-      
-        if (roleResults.length > 0) {
-        res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
-        }
-      });
-    });
-  });
-});
+  deleteRatingEntry(carId, (err,resultD)=>{
+    deleteCarEntry(carId,(err,resultC)=>{
+      getUserIdByUsername(username,(err,resultUser)=>{
+        const userId = resultUser
+        checkUserRole(userId, (err,resultRole)=>{
+          const param1 = resultRole.length
+          const role = param1>1? "seller":"buyer"
+          res.redirect(`/${username}/${role}/profile?param=${param1}`);
+        })
+      })
+    })
+  })
+})
   
 app.get('/:username/car/:carId/edit', (req, res) => {
   const { username, carId } = req.params;
