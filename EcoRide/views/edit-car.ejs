@@ -5,42 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Car - <%= carModel %></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/styles.css">
 </head>
 <body>
-  <div class="container mt-5">
-    <h1 class="text-center">Edit Car Details</h1>
-    <form action="/<%= username %>/car/<%= carId %>/edit" method="POST" class="p-4 border rounded shadow-sm">
-      
-      <div class="mb-3">
-        <label for="carModel" class="form-label">Car Model</label>
-        <input type="text" class="form-control" id="carModel" name="carModel" value="<%= carModel %>" required>
-      </div>
+  <div class="container">
+    <header>
+      <%- include('header.ejs') %>
+    </header>
 
-      <div class="mb-3">
-        <label for="carCompany" class="form-label">Car Company</label>
-        <input type="text" class="form-control" id="carCompany" name="carCompany" value="<%= carCompany %>" required>
-      </div>
+    <div class="mt-5">
+      <h1 class="text-center">Edit Car Details</h1>
+      <form action="/<%= username %>/car/<%= carId %>/edit" method="POST" class="p-4 border rounded shadow-sm">
+        
+        <div class="mb-3">
+          <label for="carModel" class="form-label">Car Model</label>
+          <input type="text" class="form-control" id="carModel" name="carModel" value="<%= carModel %>" required>
+        </div>
 
-      <div class="mb-3">
-        <label for="mileage" class="form-label">Mileage</label>
-        <input type="text" class="form-control" id="mileage" name="mileage" value="<%= mileage %>" required>
-      </div>
+        <div class="mb-3">
+          <label for="carCompany" class="form-label">Car Company</label>
+          <input type="text" class="form-control" id="carCompany" name="carCompany" value="<%= carCompany %>" required>
+        </div>
 
-      <div class="mb-3">
-        <label for="price" class="form-label">Price</label>
-        <input type="number" class="form-control" id="price" name="price" value="<%= price %>" required>
-      </div>
+        <div class="mb-3">
+          <label for="mileage" class="form-label">Mileage</label>
+          <input type="text" class="form-control" id="mileage" name="mileage" value="<%= mileage %>" required>
+        </div>
 
-      <div class="mb-3">
-        <label for="availability" class="form-label">Availability</label>
-        <select class="form-select" id="availability" name="availability" required>
-          <option value="1" <%= availability === 1 ? 'selected' : '' %>>Available</option>
-          <option value="0" <%= availability === 0 ? 'selected' : '' %>>Not Available</option>
-        </select>
-      </div>
+        <div class="mb-3">
+          <label for="price" class="form-label">Price</label>
+          <input type="number" class="form-control" id="price" name="price" value="<%= price %>" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="availability" class="form-label">Availability</label>
+          <select class="form-select" id="availability" name="availability" required>
+            <option value="1" <%= availability === 1 ? 'selected' : '' %>>Available</option>
+            <option value="0" <%= availability === 0 ? 'selected' : '' %>>Not Available</option>
+          </select>
+        </div>
 
       <button type="submit" class="btn btn-primary">Update Car</button>
-      <a href="/<%= username %>/profile" class="btn btn-secondary">Cancel</a>
+      <a href="/<%= username %>/seller/profile" class="btn btn-secondary">Cancel</a>
     </form>
   </div>
 </body>

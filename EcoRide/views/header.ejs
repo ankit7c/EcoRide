@@ -15,10 +15,8 @@
 </a>
 <nav>
   <a href="/" class="active">Home</a>
-  <a href="#">About Us</a>
-  <a href="#">Contact Us</a>
-  <% if (isLogin) { %>
-    <a href="#">Profile</a>
+  <a href="/about-us">About Us</a>
+  <% if (isLogin === undefined ? false : isLogin) { %>
     <a href="/">Logout</a>
   <% } %>
 </nav>

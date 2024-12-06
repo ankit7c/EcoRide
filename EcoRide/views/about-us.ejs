@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - Top 5 Rented Brands</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/styles/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+      background: #fff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 24px;
+    }
+    #chart-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 20px auto;
+    }
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+        <%- include('header.ejs') %>
+    </header>
+    <h1>Top 5 Rented Car Brands</h1>
+    <div id="chart-container">
+      <canvas id="carsChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Extract data passed from the backend
+    const dataFromBackend = <%- JSON.stringify(resInsights) %>;
+
+    // Prepare labels and data for the chart
+    const labels = dataFromBackend.map(item => item.carCompany);
+    const counts = dataFromBackend.map(item => item.bookingCount);
+
+    // Render the chart
+    const ctx = document.getElementById('carsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Bookings',
+          data: counts,
+          backgroundColor: [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+          ],
+          borderWidth: 1,
+          borderColor: '#fff',
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true, /* Ensures no infinite scrolling */
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#555',
+              font: {
+                size: 14
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let value = context.raw;
+                return `${context.label}: ${value} bookings`;
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
