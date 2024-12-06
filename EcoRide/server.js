@@ -2,8 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 var bcrypt = require('bcrypt');
 const path = require('path');
-const { kMaxLength } = require('buffer');
-const moment = require('moment');
 const app = express();
 app.set('view engine', 'ejs');
 
@@ -685,6 +683,26 @@ app.get('/about-us',(req,res)=>{
     connection.query(query2,(err,resInsights2)=>{
       isLogin = false;
       res.render('about-us',{resInsights1, resInsights2,isLogin})
+    })
+  })
+})
+
+app.get('/:username/eco-stats',(req,res)=>{
+  const{username} = req.params
+  getUserIdByUsername(username,(err,resUserId)=>{
+    const userId = resUserId
+    const sqlProcedure = 'CALL GetUserInsights (?)'
+    connection.query(sqlProcedure,[userId],(err,resultProcedure)=>{
+      if(err){
+        console.err("Procedure failed")
+      }
+      const result = resultProcedure[0]
+      checkUserRole(userId, (err,resultRole)=>{
+        const param1 = resultRole.length
+        const role = param1>1? "seller":"buyer"
+        res.render('eco-stats',{result:result[0], username, role, param1})
+      })
+     
     })
   })
 })

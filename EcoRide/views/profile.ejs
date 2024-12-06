@@ -47,6 +47,7 @@
       <div class="profile-header text-center">
         <h1>Welcome, <%= user.name %></h1>
         <p>Email: <%= user.email %></p>
+        <a href="/<%= username%>/eco-stats" class="my-green-btn">Your Eco-Stats</a>
       </div>
 
       <% if (role === 'buyer' || param == 2) { %>

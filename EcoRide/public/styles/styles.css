@@ -143,3 +143,20 @@ nav a:hover {
   text-align: center; 
 }
 
+
+.my-green-btn {
+  text-decoration: none; /* Removes underline */
+  color: #2ecc71; /* Green text color */
+  border: 2px solid #2ecc71; /* Green border */
+  padding: 6px 12px; /* Space inside the link */
+  border-radius: 50px; /* Rounded corners */
+  transition: all 0.3s ease; /* Smooth transition effect */
+  cursor: pointer; /* Pointer cursor for clickable effect */
+  display: inline-block; /* Makes the link behave like a button */
+}
+
+.my-green-btn:hover {
+  color: white; /* Change text color on hover */
+  background-color: #2ecc71; /* Fill the background with green */
+  box-shadow: 0 0 15px #2ecc71; /* Add a green glowing effect */
+}
