@@ -17,18 +17,25 @@ const { checkUserRole, getUserIdByUsername, getBookingsByUserId, getUserDetailsB
 
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-
+var isLogin = false;
 app.get('/', (req, res) => {
-  res.render('index'); 
+  isLogin = false;
+  res.render('start' , {isLogin}); 
+});
+
+app.get('/index', (req, res) => {
+  isLogin = false;
+  res.render('index', {isLogin}); 
 });
 
 app.get('/login', (req, res) => {
-  res.render('login')
+  isLogin = false;
+  res.render('login', {isLogin}); 
 });
 
 app.get('/register', (req, res) => {
-  res.render('register')
+  isLogin = false;
+  res.render('register', {isLogin}); 
 });
 
 app.post('/register', function(req, res) {
@@ -135,7 +142,8 @@ app.get('/:username/:role/profile', (req, res) => {
           checkUserRole(user.userId, (err,resultRole)=>{
             param = resultRole.length
             const role = param>1? "seller":"buyer"
-            res.render('profile',{username, user, role, param, cars, bookingResults, pts})
+            isLogin = true;
+            res.render('profile',{username, user, role, param, cars, bookingResults, pts,isLogin})
           })
         })
       })
@@ -148,8 +156,9 @@ app.get('/:username/:role/profile', (req, res) => {
 
 
 app.get("/:username/manage", (req,res)=>{
-  const username = req.params
-  res.render('manage',username)
+  const username = req.params.username
+  isLogin = true;
+  res.render('manage',{username, isLogin});
 })
 
 // can be updated in future with the param value 
@@ -201,10 +210,11 @@ app.get('/:username/cars/book', (req, res) => {
       res.status(500).send({ message: 'Error fetching car data', error: err });
       return;
     }
-
+    isLogin = true;
     res.render('buyer', {
       username: req.params.username, 
       searchTerm: searchTerm,
+      isLogin: isLogin,
       cars: results
     });
   });
@@ -220,8 +230,8 @@ app.get('/:username/car/:carId/book', (req, res) => {
       res.status(500).send('Error fetching car details');
       return;
     }
-
-    res.render('book-car', { username, car: result[0] });
+    isLogin = true;
+    res.render('book-car', { username, car: result[0],isLogin });
   });
 });
 
@@ -299,7 +309,8 @@ app.post('/:username/car/:carId/book/confirm', (req, res) => {
 
 app.get('/:username/seller/add-car', (req, res) => {
   const { username } = req.params;
-  res.render('add-car', { username });
+  isLogin = true;
+  res.render('add-car', { username , isLogin });
 });
   
   
@@ -364,7 +375,55 @@ app.post('/:username/seller/add-car', (req, res) => {
     });
   });
 });  
+
+
+app.get('/:username/:role/profile', (req, res) => {
+  const { username, role } = req.params; 
+  const { param } = req.query;  
+  const getUserDetails = 'SELECT userId, name, email FROM User WHERE name = ?';
+  
+  const getUserCars = 'SELECT * FROM Car WHERE userId = (SELECT userId FROM User WHERE name = ?)';
+
+  connection.query(getUserDetails, [username], (err, userResult) => {
+    if (err || userResult.length === 0) {
+      res.status(500).send({ message: 'Error fetching user details or user not found', error: err });
+      return;
+    }
+    const user = userResult[0];
+    console.log(user)
+
+    connection.query(getUserCars, [username], (err, carResults) => {
+      if (err) {
+        res.status(500).send({ message: 'Error fetching user cars', error: err });
+        return;
+      }
+      console.log("HIIII", username)
+      console.log("HIIII", user)
+      console.log("HIIII", carResults)
+      const getBookingsQuery = `
+        SELECT b.startDate, b.endDate,b.endMileage, c.carModel, c.carCompany, c.price
+        FROM Booking b
+        INNER JOIN Car c ON b.carId = c.carId
+        INNER JOIN User u ON b.userId = u.userId
+        WHERE u.userId = ?
+      `;
+
+      connection.query(getBookingsQuery, [user.userId], (bookingErr, bookingResults) => {
+        if (bookingErr) {
+          res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
+          return;
+        }
+        isLogin = true;
+        res.render('profile', { username, user, cars: carResults, role, param, bookingResults,isLogin});
+      });
+    });
+  });
+});
+
+    
       
+
+  
 
 app.post('/:username/seller/:carId/delete', (req, res) => {
   const { username, carId } = req.params;
@@ -421,6 +480,7 @@ app.get('/:username/car/:carId/edit', (req, res) => {
       return;
     }
     const car = results[0]; 
+    isLogin = true;
     res.render('edit-car', { 
       username, 
       carId, 
@@ -428,7 +488,8 @@ app.get('/:username/car/:carId/edit', (req, res) => {
       carCompany: car.carCompany, 
       mileage: car.mileage, 
       price: car.price, 
-      availability: car.availability 
+      availability: car.availability,
+      isLogin:isLogin 
     });
   });
 });
@@ -520,8 +581,9 @@ app.get('/:username/car/:carId/:carCompany/:carModel/end-ride', (req, res) => {
           return res.status(500).send({ message: 'Error fetching car price', error: err })
         }
         const booking = bookingResult[0];
-        const price = carPrice[0].price
-        res.render('end-ride', { username, carId, carCompany, carModel, price, booking });
+        const price = carPrice[0].price;
+        const isLogin = true;
+        res.render('end-ride', { username, carId, carCompany, carModel, price, booking, isLogin });
 
       })
 
@@ -613,7 +675,8 @@ app.get('/:username/eco-points/:pts', (req, res) => {
     checkUserRole(resUser, (err,resultRole)=>{
       const param = resultRole.length
       const role = param>1? "seller":"buyer"
-      res.render('eco-points', { username, param, role, pts });
+      isLogin = true;
+      res.render('eco-points', { username, param, role, pts, isLogin});
     })
   })
   
@@ -636,6 +699,14 @@ app.get('/:username/:role/claim-service',(req,res)=>{
         })
       })
     })
+  })
+})
+
+app.get('/about-us',(req,res)=>{
+  const query = 'SELECT c.carCompany, COUNT(b.bookingId) AS bookingCount FROM Booking b JOIN Car c ON b.carId = c.carId GROUP BY c.carCompany ORDER BY bookingCount desc LIMIT 5;'
+  connection.query(query,(err,resInsights)=>{
+    isLogin = false;
+    res.render('about-us',{resInsights, isLogin})
   })
 })
 
