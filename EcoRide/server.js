@@ -528,11 +528,9 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
       connection.query(updateAvailabilityQuery, [updatedMileage,carId], (err,results)=>{
         getUserIdByUsername(username,(err,resultUserId)=>{
           const userId = resultUserId
-          console.log("buyer user id", userId);
           const carUserQuery = 'SELECT userId FROM Car WHERE carId = ?'
           connection.query(carUserQuery,[carId],(err,carUser)=>{
           const carUserId = carUser[0].userId
-          console.log("buyer user id", userId);
         getBookingsByUserId(userId,(err,resbook)=>{
           const getBookingDetailsByBookingIdQuery ='SELECT * FROM Booking WHERE bookingId = ?'
           connection.query(getBookingDetailsByBookingIdQuery, [bookingId],(err, bookResOne)=>{
@@ -557,7 +555,6 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
           const updateBookingQuery = 'UPDATE Booking SET tripStatus = 1, endDate = NOW(), tripCost=?, endMileage=? WHERE bookingId = ?';
           connection.query(updateBookingQuery, [totalPrice,endMileage,bookingId],(err,resultsT)=>{
             addToCarRating(carId, userId, bookingId, rating,(err, resRating)=>{
-              console.log(username," ",carId," ",bookingId," ",endMileage," ",rating)
               const transactionQuery = `CALL UpdateEcoPoints(?,?,?,?,?)`;
                 connection.query(transactionQuery, [username,carId,bookingId,endMileage,rating], (err, result) => {
                   if (err) {
@@ -665,6 +662,18 @@ app.get('/:username/eco-stats',(req,res)=>{
         res.render('eco-stats',{result:result[0], username, role, param})
       })
     })
+  })
+})
+
+app.get('/:username/bookingHistory',(req,res)=>{
+  const {username} = req.params
+  getUserIdByUsername(username,(err,resUserId)=>{
+    const userId = resUserId
+    const bookingHistoryQuery = 'SELECT c.carCompany, c.carModel, u.name, b.tripStatus, b.tripCost FROM Booking b INNER JOIN Car c ON b.carId = c.carId INNER JOIN User u ON b.userId = u.userId WHERE c.userId = 1035;'
+    connection.query(bookingHistoryQuery,(err, results)=>{
+      const isLogin = true
+      res.render('booking-history',{results, isLogin, username})
+    })  
   })
 })
 
