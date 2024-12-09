@@ -14,25 +14,31 @@
     document.getElementById("endTime").innerText = now.toLocaleString();
 
     const bookingStartTime = new Date('<%= booking.startDate %>');  
-    const bookingEndTime = new Date('<%= booking.endDate %>');      
+    const bookingEndTime = new Date('<%= booking.endDate %>');    
+
     const timeRender = bookingEndTime.toLocaleString()
     document.getElementById("scheduledEndTime").innerText = timeRender
     const tripEndTime = now > bookingEndTime ? now : bookingEndTime;  // Use the later of now or scheduled end
-    const durationMs = tripEndTime - bookingStartTime;
-    const tripHours = Math.ceil(durationMs / (1000 * 60 * 60));        // Convert ms to hours, round up
+    // const durationMs = tripEndTime - bookingStartTime;
+    const tripHours = Math.ceil((tripEndTime - bookingStartTime) / (1000 * 60 * 60)); 
+    console.log(tripHours)
+    const basePrice = <%= price %>;        // Convert ms to hours, round up
 
     // Calculate fine if the ride exceeds the scheduled end time
     let fine = 0;
+    let displayfine = 0;
     if (now > bookingEndTime) {
       const overtimeHours = Math.ceil((now - bookingEndTime) / (1000 * 60 * 60));
-      fine = overtimeHours * 5;  // Fine is $5 per overtime hour
+      console.log("overtime",overtimeHours)
+
+      fine = overtimeHours * 5;
     }
 
     document.getElementById("fine").innerText = fine.toFixed(2);
 
     // Calculate total price
-    const basePrice = <%= price %>;  // Base price from EJS
-    const totalPrice = (tripHours * basePrice) + fine;
+     // Base price from EJS
+    const totalPrice = (tripHours* basePrice) + fine;
     document.getElementById("finalPrice").innerText = totalPrice.toFixed(2);
   }
 

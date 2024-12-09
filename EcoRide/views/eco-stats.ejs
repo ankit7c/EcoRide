@@ -118,28 +118,37 @@
             <!-- Average Mileage -->
             <div class="stat-card">
                 <div class="stat-title">Average Mileage</div>
-                <div class="stat-value"><%= result.AverageMileage %> MPG</div>
+                
+                <div class="stat-value">
+                    <%= result.AverageMileage ? result.AverageMileage + 'MPG' : '0.00 MPG' %>
+                  </div>
                 <div class="stat-description">Average miles per gallon</div>
             </div>
 
             <!-- Longest Trip Hours -->
             <div class="stat-card">
                 <div class="stat-title">Longest Trip Hours</div>
-                <div class="stat-value"><%= result.LongestTripHours %> hrs</div>
+                <div class="stat-value">
+                    <%= result.LongestTripHours ? result.LongestTripHours + ' hrs' : '0 hrs' %>
+                  </div>
                 <div class="stat-description">Longest duration of a single trip</div>
             </div>
 
             <!-- Total Cost -->
             <div class="stat-card">
                 <div class="stat-title">Total Cost</div>
-                <div class="stat-value">$<%= result.TotalCost %></div>
+                <div class="stat-value">
+                    $<%= result.TotalCost ? result.TotalCost : '0.00' %>
+                  </div>
                 <div class="stat-description">Total amount spent on trips</div>
             </div>
 
             <!-- Favorite Car Company and Bookings -->
             <div class="stat-card">
                 <div class="stat-title">Favorite Car Brand</div>
-                <div class="stat-value"> <%= result.FavoriteCarCompany %> </div>
+                <div class="stat-value">
+                    <%= result.FavoriteCarCompany ? result.FavoriteCarCompany : '--' %>
+                  </div>
                 <div class="stat-description">Total number of bookings <span class="highlighted-count"><%= result.FavoriteCarCompanyBookings %></span></div>
                 
             </div>

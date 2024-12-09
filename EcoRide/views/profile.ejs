@@ -92,12 +92,14 @@
         </div>
       <% } %>
 
+      <% if (role == 'seller' || param == 2) { %>
       <div class="mt-4">
         <a href="/<%= username %>/seller/add-car" class="btn btn-primary">Add New Car</a>
       </div>
+      <%}%>
 
       <% if (role === 'buyer' || param == 2) { %>
-        <h2 class="section-header mt-4 text-center">Your Previous Trips</h2>
+        <h2 class="section-header mt-4 text-center">Your Trips</h2>
         
         <% if (bookingResults && bookingResults.length > 0) { %>
           <div class="row">

@@ -16,7 +16,8 @@
       <div class="login-container">
         <div class="login-card">
           <h1>Login to EcoRide</h1>
-          <form action="/login" method="POST">
+          <!-- Form -->
+          <form id="loginForm">
             <div class="form-group">
               <label for="username">Username</label>
               <div class="input-wrapper">
@@ -45,11 +46,50 @@
             </div>
             <button type="submit" class="login-button">Login</button>
           </form>
+          <!-- Error Message -->
+          <p id="errorMessage" class="error-message" style="color: red; display: none;"></p>
           <p class="register-text">
             Don't have an account? <a href="/register">Register here</a>
           </p>
         </div>
       </div>
     </div>
+    <!-- JavaScript -->
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', async function (event) {
+        event.preventDefault(); // Prevent default form submission
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Clear previous error message
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.style.display = 'none';
+
+        try {
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+          });
+
+          const result = await response.json();
+          if (!result.success) {
+            // Display error message
+            errorMessage.textContent = result.message;
+            errorMessage.style.display = 'block';
+          } else {
+            // Redirect on successful login
+            window.location.href = result.redirect;
+          }
+        } catch (error) {
+          errorMessage.textContent = 'An unexpected error occurred. Please try again.';
+          errorMessage.style.display = 'block';
+          console.error('Error:', error);
+        }
+      });
+    </script>
   </body>
 </html>

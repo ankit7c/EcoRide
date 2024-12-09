@@ -69,35 +69,35 @@ app.post('/register', function(req, res) {
 
 
 app.post('/login', function (req, res) {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
 
-    const sql = 'SELECT * FROM User WHERE name = ?';
-    connection.query(sql, [username], function (err, results) {
-        if (err) {
-            res.status(500).send({ message: 'Error fetching user data', error: err });
-            return;
-        }
+  const sql = 'SELECT * FROM User WHERE name = ?';
+  connection.query(sql, [username], function (err, results) {
+      if (err) {
+          res.status(500).json({ success: false, message: 'Error fetching user data', error: err });
+          return;
+      }
 
-        if (results.length === 0) {
-            res.status(401).send({ message: 'Invalid username or password' });
-            return;
-        }
+      if (results.length === 0) {
+          res.status(401).json({ success: false, message: 'Invalid username or password' });
+          return;
+      }
 
-        const user = results[0];
-        bcrypt.compare(password, user.password, function (err, isMatch) {
-            if (err) {
-                res.status(500).send({ message: 'Error comparing passwords' });
-                return;
-            }
+      const user = results[0];
+      bcrypt.compare(password, user.password, function (err, isMatch) {
+          if (err) {
+              res.status(500).json({ success: false, message: 'Error comparing passwords' });
+              return;
+          }
 
-            if (!isMatch) {
-                res.status(401).send({ message: 'Invalid username or password' });
-                return;
-            }
+          if (!isMatch) {
+              res.status(401).json({ success: false, message: 'Invalid username or password' });
+              return;
+          }
 
-            res.redirect(`/${username}/checkRole`);
-        });
-    });
+          res.status(200).json({ success: true, message: 'Login successful', redirect: `/${username}/checkRole` });
+      });
+  });
 });
 
 app.get('/:username/checkRole', (req, res) => {
@@ -122,7 +122,7 @@ app.get('/:username/checkRole', (req, res) => {
 
 app.get('/:username/:role/profile', (req, res) => {
   var { param } = req.query; 
-  const { username, role } = req.params; 
+  const { username } = req.params; 
   getUserDetailsByName(username, (err, resultUser)=>{
     const user = resultUser
     getUserCarsByUserName(user.userId,(err, carResults)=>{
@@ -139,7 +139,10 @@ app.get('/:username/:role/profile', (req, res) => {
           }
           checkUserRole(user.userId, (err,resultRole)=>{
             param = resultRole.length
-            const role = param>1? "seller":"buyer"
+            var {role} = req.params
+            if(param==2){
+                role = "seller"
+            }
             isLogin = true;
             res.render('profile',{username, user, role, param, cars, bookingResults, pts,isLogin})
           })
@@ -277,13 +280,6 @@ app.post('/:username/car/:carId/book/confirm', (req, res) => {
           if (err) {
             return res.status(500).send({ message: 'Error inserting booking', error: err });
           }
-          const updateAvailability = `UPDATE Car SET availability=false where carId = ?`
-          connection.query(updateAvailability, [carId], (updateErr, updateResult) => {
-            if (updateErr) {
-              console.error("Error updating car availability:", updateErr);
-              return res.status(500).send({ message: "Error updating car availability", error: updateErr });
-            }
-          });
 
 
           const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
@@ -355,73 +351,21 @@ app.post('/:username/seller/add-car', (req, res) => {
             res.status(500).send({ message: 'Error adding car to the database', error: err });
             return;
           }
-
-          const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
-
-          connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
-            if (err) {
-              console.error('Error checking user role:', err);
-              return res.status(500).send('Error checking user role');
+          checkUserRole(userId, (err,resultRole)=>{
+            param = resultRole.length
+            var role = resultRole[0].role
+            if(param==2){
+                role = "seller"
             }
-            
-              if (roleResults.length > 0) {
-              res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
-              }
+            if (param > 0) {
+              res.redirect(`/${username}/${role}/profile?param=${param}`);
+            }
           });
         }
       );
     });
   });
 });  
-
-
-app.get('/:username/:role/profile', (req, res) => {
-  const { username, role } = req.params; 
-  const { param } = req.query;  
-  const getUserDetails = 'SELECT userId, name, email FROM User WHERE name = ?';
-  
-  const getUserCars = 'SELECT * FROM Car WHERE userId = (SELECT userId FROM User WHERE name = ?)';
-
-  connection.query(getUserDetails, [username], (err, userResult) => {
-    if (err || userResult.length === 0) {
-      res.status(500).send({ message: 'Error fetching user details or user not found', error: err });
-      return;
-    }
-    const user = userResult[0];
-    console.log(user)
-
-    connection.query(getUserCars, [username], (err, carResults) => {
-      if (err) {
-        res.status(500).send({ message: 'Error fetching user cars', error: err });
-        return;
-      }
-      console.log("HIIII", username)
-      console.log("HIIII", user)
-      console.log("HIIII", carResults)
-      const getBookingsQuery = `
-        SELECT b.startDate, b.endDate,b.endMileage, c.carModel, c.carCompany, c.price
-        FROM Booking b
-        INNER JOIN Car c ON b.carId = c.carId
-        INNER JOIN User u ON b.userId = u.userId
-        WHERE u.userId = ?
-      `;
-
-      connection.query(getBookingsQuery, [user.userId], (bookingErr, bookingResults) => {
-        if (bookingErr) {
-          res.status(500).send({ message: 'Error fetching bookings', error: bookingErr });
-          return;
-        }
-        isLogin = true;
-        res.render('profile', { username, user, cars: carResults, role, param, bookingResults,isLogin});
-      });
-    });
-  });
-});
-
-    
-      
-
-  
 
 app.post('/:username/seller/:carId/delete', (req, res) => {
   const { username, carId } = req.params;
@@ -430,9 +374,12 @@ app.post('/:username/seller/:carId/delete', (req, res) => {
       getUserIdByUsername(username,(err,resultUser)=>{
         const userId = resultUser
         checkUserRole(userId, (err,resultRole)=>{
-          const param1 = resultRole.length
-          const role = param1>1? "seller":"buyer"
-          res.redirect(`/${username}/${role}/profile?param=${param1}`);
+          param = resultRole.length
+          var role = resultRole[0].role
+          if(param==2){
+              role = "seller"
+          }
+          res.redirect(`/${username}/${role}/profile?param=${param}`);
         })
       })
     })
@@ -506,16 +453,14 @@ app.post('/:username/car/:carId/edit', (req, res) => {
 
         const userId = results[0].userId;
 
-        const checkUserRoleQuery = 'SELECT role FROM UserRoles WHERE userId = ?';
-
-        connection.query(checkUserRoleQuery, [userId], (err, roleResults) => {
-          if (err) {
-            console.error('Error checking user role:', err);
-            return res.status(500).send('Error checking user role');
+        checkUserRole(userId, (err,resultRole)=>{
+          param = resultRole.length
+          var role = resultRole[0].role
+          if(param==2){
+              role = "seller"
           }
-        
-          if (roleResults.length > 0) {
-          res.redirect(`/${username}/seller/profile?param=${roleResults.length}`);
+          if (param > 0) {
+          res.redirect(`/${username}/${role}/profile?param=${param}`);
           }
         });
       });
@@ -571,68 +516,75 @@ app.post('/:username/car/:carId/end-ride/:bookingId', (req, res) => {
   const { username, carId, bookingId } = req.params;
   const endMileage = parseFloat(parseFloat(req.body.endMileage).toFixed(2));
   const rating = parseFloat(req.body.rating);
-  try {
+  try 
+  { 
     const getStartMileageQuery = 'SELECT mileage, price from Car WHERE carId = ?';
     connection.query(getStartMileageQuery,carId,(err,resultMil)=>{
       const startMileage = parseFloat(parseFloat(resultMil[0].mileage).toFixed(2));
       const mileageDifference = endMileage - startMileage;
       const updatedMileage = (endMileage + startMileage) / 2;
       const updateAvailabilityQuery = 'UPDATE Car SET availability = 1, mileage=? WHERE carId = ?';
+  
       connection.query(updateAvailabilityQuery, [updatedMileage,carId], (err,results)=>{
         getUserIdByUsername(username,(err,resultUserId)=>{
           const userId = resultUserId
-          // buyer ecopoints
-          if(mileageDifference>5)
-          {
-            updateEcoPointsForUser(userId, (err, updateEco)=>{})
+          console.log("buyer user id", userId);
+          const carUserQuery = 'SELECT userId FROM Car WHERE carId = ?'
+          connection.query(carUserQuery,[carId],(err,carUser)=>{
+          const carUserId = carUser[0].userId
+          console.log("buyer user id", userId);
+        getBookingsByUserId(userId,(err,resbook)=>{
+          const getBookingDetailsByBookingIdQuery ='SELECT * FROM Booking WHERE bookingId = ?'
+          connection.query(getBookingDetailsByBookingIdQuery, [bookingId],(err, bookResOne)=>{
+                  
+          const startDateTime = new Date(bookResOne[0].startDate);  
+          const endDateTime = new Date(bookResOne[0].endDate);      
+          const returnDateTime = new Date();
+          
+          const basePricePerHour = resultMil[0].price
+          const billingEndTime = returnDateTime <= endDateTime ? endDateTime : returnDateTime; 
+          const billingDurationMs = billingEndTime - startDateTime;
+          const billingDurationHours = Math.ceil(billingDurationMs / (1000 * 60 * 60));
+          const basePrice = billingDurationHours * basePricePerHour;
+      
+          let fine = 0;  
+          if (returnDateTime > endDateTime) {
+            const overtimeMs = returnDateTime - endDateTime;
+            const overtimeHours = Math.ceil(overtimeMs / (1000 * 60 * 60));
+            fine = overtimeHours * 5; 
           }
-          // seller ecopoints
-          if(rating>=4)
-          {
-            const carUserQuery = 'SELECT userId FROM Car WHERE carId = ?'
-            connection.query(carUserQuery,[carId],(err,carUser)=>{
-              const carUserId = carUser[0].userId
-              updateEcoPointsForUser(carUserId, (err, updateSellerEco)=>{})
-            })
-          }
-          getBookingsByUserId(userId,(err,resbook)=>{
-            const getBookingDetailsByBookingIdQuery ='SELECT * FROM Booking WHERE bookingId = ?'
-            connection.query(getBookingDetailsByBookingIdQuery, [bookingId],(err, bookResOne)=>{
-              
-              const startDateTime = new Date(bookResOne[0].startDate);  
-              const endDateTime = new Date(bookResOne[0].endDate);      
-              const returnDateTime = new Date();
-              
-              const basePricePerHour = resultMil[0].price
-              const billingEndTime = returnDateTime <= endDateTime ? endDateTime : returnDateTime; 
-              const billingDurationMs = billingEndTime - startDateTime;
-              const billingDurationHours = Math.ceil(billingDurationMs / (1000 * 60 * 60));
-              const basePrice = billingDurationHours * basePricePerHour;
-
-              let fine = 0;  
-              if (returnDateTime > endDateTime) {
-                const overtimeMs = returnDateTime - endDateTime;
-                const overtimeHours = Math.ceil(overtimeMs / (1000 * 60 * 60));
-                fine = overtimeHours * 5; 
-              }
-              const totalPrice = basePrice + fine;
-              const updateBookingQuery = 'UPDATE Booking SET tripStatus = 1, endDate = NOW(), tripCost=?, endMileage=? WHERE bookingId = ?';
-              connection.query(updateBookingQuery, [totalPrice,endMileage,bookingId],(err,resultsT)=>{
-                checkUserRole(userId, (err,resultRole)=>{
-                  const roleLen = resultRole.length
-                  const role = roleLen>1? "seller":"buyer"
-                  addToCarRating(carId, userId, bookingId, rating,(err, resRating)=>{
-
-                    res.redirect(`/${username}/${role}/profile?param=${roleLen}`);
-                  })  
+          const totalPrice = basePrice + fine;
+          const updateBookingQuery = 'UPDATE Booking SET tripStatus = 1, endDate = NOW(), tripCost=?, endMileage=? WHERE bookingId = ?';
+          connection.query(updateBookingQuery, [totalPrice,endMileage,bookingId],(err,resultsT)=>{
+            addToCarRating(carId, userId, bookingId, rating,(err, resRating)=>{
+              console.log(username," ",carId," ",bookingId," ",endMileage," ",rating)
+              const transactionQuery = `CALL UpdateEcoPoints(?,?,?,?,?)`;
+                connection.query(transactionQuery, [username,carId,bookingId,endMileage,rating], (err, result) => {
+                  if (err) {
+                    connection.rollback();
+                    console.error('Error processing transaction:', err);
+                    return res.status(500).send({ message: 'Error processing transaction', error: err });
+                  }
+                  checkUserRole(userId, (err,resultRole)=>{
+                    param = resultRole.length
+                    var role = resultRole[0].role
+                    if(param==2){
+                        role = "seller"
+                    }
+                    res.redirect(`/${username}/${role}/profile?param=${param}`);
+                  });
                 });
-              })
+            }); 
+              });
             })
-          })
-        });
+          })  
+        })
+        })
       })
     });
-  }catch (err) {
+  }
+  catch (err) 
+  {
     console.error('Error ending ride:', err);
     res.status(500).send({ message: 'Error processing ride completion', error: err });
   }
@@ -647,8 +599,12 @@ app.get('/:username/eco-points/:pts', (req, res) => {
   const pts = parseInt(req.params.pts, 0);
   getUserIdByUsername(username, (err,resUser)=>{
     checkUserRole(resUser, (err,resultRole)=>{
-      const param = resultRole.length
-      const role = param>1? "seller":"buyer"
+
+      param = resultRole.length
+      var role = resultRole[0].role
+      if(param==2){
+          role = "seller"
+      }
       isLogin = true;
       res.render('eco-points', { username, param, role, pts, isLogin});
     })
@@ -667,16 +623,19 @@ app.get('/:username/:role/claim-service',(req,res)=>{
       const updateEcoPts = 'UPDATE EcoPoints SET points=? WHERE userId=?'
       connection.query(updateEcoPts, [newEcoPts,userId],(err,resUpdate)=>{
         checkUserRole(userId, (err,resultRole)=>{
-          const param1 = resultRole.length
-          const role = param1>1? "seller":"buyer"
-          res.redirect(`/${username}/${role}/profile?param=${param1}`)
+          param = resultRole.length
+          var role = resultRole[0].role
+          if(param==2){
+              role = "seller"
+          }
+          res.redirect(`/${username}/${role}/profile?param=${param}`)
         })
       })
     })
   })
 })
 
-app.get('/about-us',(req,res)=>{
+app.get('/analytics',(req,res)=>{
   const query1 = 'SELECT c.carCompany, COUNT(b.bookingId) AS bookingCount FROM Booking b JOIN Car c ON b.carId = c.carId GROUP BY c.carCompany ORDER BY bookingCount desc LIMIT 5;'
   const query2 = 'select c.carId,c.carCompany,c.carModel,COUNT(b.bookingId) as noOfBooking, AVG(cr.ratingValue) as avgRating,c.price,c.mileage from Car c inner join CarRating cr on cr.carId=c.carId inner join Booking b on b.bookingId=cr.bookingId where c.price<(Select avg(price) from Car) and c.mileage>(select avg(mileage) from Car) Group by c.carId having noOfBooking>=3 and avgRating>=4 Order by c.price asc,c.mileage desc,avgRating desc,noOfBooking desc LIMIT 5;'
   connection.query(query1,(err,resInsights1)=>{
@@ -698,11 +657,13 @@ app.get('/:username/eco-stats',(req,res)=>{
       }
       const result = resultProcedure[0]
       checkUserRole(userId, (err,resultRole)=>{
-        const param1 = resultRole.length
-        const role = param1>1? "seller":"buyer"
-        res.render('eco-stats',{result:result[0], username, role, param1})
+        param = resultRole.length
+        var role = resultRole[0].role
+        if(param==2){
+            role = "seller"
+        }
+        res.render('eco-stats',{result:result[0], username, role, param})
       })
-     
     })
   })
 })
