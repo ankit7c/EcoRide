@@ -1,0 +1,186 @@
+---------------------------------------------------------------------------------------------------
+-- TRIGGER
+DELIMITER $$
+
+CREATE TRIGGER AfterBookingUpdate
+AFTER INSERT ON Booking
+FOR EACH ROW
+BEGIN
+    IF (SELECT availability FROM Car WHERE carId = NEW.carId) = TRUE THEN
+        UPDATE Car 
+        SET availability = FALSE 
+        WHERE carId = NEW.carId;
+    END IF;
+END$$
+
+DELIMITER ;
+
+---------------------------------------------------------------------------------------------------
+-- STORED PROCEDURE
+DELIMITER //
+
+CREATE PROCEDURE GetUserInsights(
+    IN inputUserId INT
+)
+BEGIN
+    -- Variables to store results
+    DECLARE TotalTrips INT;
+    DECLARE AverageMileage DECIMAL(10, 2);
+    DECLARE FavoriteCarCompany VARCHAR(50);
+    DECLARE FavoriteCarCompanyBookings INT;
+    DECLARE LongestTripHours INT;
+    DECLARE TotalCost DECIMAL(10, 2);
+
+    -- Query 1: Total trips     
+    SELECT 
+        COUNT(b.bookingId)
+    INTO 
+        TotalTrips
+    FROM 
+        User u
+    LEFT JOIN 
+        Booking b ON u.userId = b.userId AND b.tripStatus = TRUE
+    WHERE 
+        u.userId = inputUserId;
+
+
+    -- Query 2: Average Mileage
+    SELECT 
+        COALESCE(AVG(b.endMileage), 0)
+    INTO 
+        AverageMileage
+    FROM 
+        Booking b
+    WHERE 
+        b.userId = inputUserId AND b.tripStatus = TRUE;
+
+    -- Query 3: Most frequent car company booked
+    SELECT 
+        c.carCompany, COUNT(b.bookingId)
+    INTO 
+        FavoriteCarCompany, FavoriteCarCompanyBookings
+    FROM 
+        Booking b
+    JOIN 
+        Car c ON b.carId = c.carId
+    WHERE 
+        b.userId = inputUserId
+    GROUP BY 
+        c.carCompany
+    ORDER BY 
+        COUNT(b.bookingId) DESC
+    LIMIT 1;
+
+    -- Query 4: Longest trip completed
+   SELECT 
+        TIMESTAMPDIFF(HOUR, b.startDate, b.endDate)
+    INTO 
+        LongestTripHours
+    FROM 
+        Booking b
+    WHERE 
+        b.userId = inputUserId AND b.tripStatus = TRUE
+    ORDER BY 
+        TIMESTAMPDIFF(HOUR, b.startDate, b.endDate) DESC
+    LIMIT 1;
+
+
+
+    -- Query 5: Total cost of completed trips
+    SELECT 
+        COALESCE(SUM(b.tripCost), 0)
+    INTO 
+        TotalCost
+    FROM 
+        Booking b
+    WHERE 
+        b.userId = inputUserId AND b.tripStatus = TRUE;
+
+    -- Final output
+    SELECT 
+        TotalTrips AS TotalTrips,
+        AverageMileage AS AverageMileage,
+        FavoriteCarCompany AS FavoriteCarCompany,
+        FavoriteCarCompanyBookings AS FavoriteCarCompanyBookings,
+        LongestTripHours AS LongestTripHours,
+        TotalCost AS TotalCost;
+END //
+
+DELIMITER ;
+
+---------------------------------------------------------------------------------------------------
+-- TRANSACTION
+DELIMITER //
+
+CREATE PROCEDURE UpdateEcoPoints (
+    IN username VARCHAR(50), 
+    IN carId INT, 
+    IN bookingId INT, 
+    IN endMileage DECIMAL(4, 2), 
+    IN rating DECIMAL(2, 1)
+)
+BEGIN
+    DECLARE buyerId INT;
+    DECLARE sellerId INT;
+    DECLARE startMileage DECIMAL(4, 2);
+    DECLARE currentTripStatus BOOLEAN;
+    DECLARE newEcoPointsId INT;
+
+    SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+    START TRANSACTION;
+
+    SELECT b.userId, b.startMileage, b.tripStatus INTO buyerId, startMileage, currentTripStatus
+    FROM Booking b
+    WHERE b.bookingId = bookingId;
+
+    SELECT c.userId INTO sellerId
+    FROM Car c
+    WHERE c.carId = carId;
+
+    IF currentTripStatus = 1 THEN
+        IF (endMileage - startMileage) > 5 THEN
+            BEGIN
+                START TRANSACTION;
+                
+                IF EXISTS (
+                    SELECT 1 FROM EcoPoints WHERE userId = buyerId
+                ) THEN
+                    UPDATE EcoPoints
+                    SET points = points + 50
+                    WHERE userId = buyerId;
+                ELSE
+                    SELECT MAX(ecoPointsId) + 1 INTO newEcoPointsId FROM EcoPoints;
+                    INSERT INTO EcoPoints (ecoPointsId, userId, points)
+                    VALUES (newEcoPointsId, buyerId, 50);
+                END IF;
+                
+                COMMIT;
+            END;
+        END IF;
+
+        IF rating >= 4 THEN
+            BEGIN
+                START TRANSACTION;
+                
+                IF EXISTS (
+                    SELECT 1 FROM EcoPoints WHERE userId = sellerId
+                ) THEN
+                    UPDATE EcoPoints
+                    SET points = points + 50
+                    WHERE userId = sellerId;
+                ELSE
+                    SELECT MAX(ecoPointsId) + 1 INTO newEcoPointsId FROM EcoPoints;
+                    INSERT INTO EcoPoints (ecoPointsId, userId, points)
+                    VALUES (newEcoPointsId, sellerId, 50);
+                END IF;
+                
+                COMMIT;
+            END;
+        END IF;
+    END IF;
+
+    COMMIT;
+END //
+
+DELIMITER ;
+---------------------------------------------------------------------------------------------------
